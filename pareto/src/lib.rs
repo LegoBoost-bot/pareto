@@ -130,3 +130,19 @@ impl<T: Dominate> Extend<T> for ParetoFront<T> {
         }
     }
 }
+
+#[repr(transparent)]
+#[derive(PartialEq, Eq, Debug)]
+pub struct Inverse<T>(T);
+
+impl<T: PartialOrd> PartialOrd for Inverse<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        other.0.partial_cmp(&self.0)
+    }
+}
+
+impl<T: Ord> Ord for Inverse<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.0.cmp(&self.0)
+    }
+}
