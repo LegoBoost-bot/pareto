@@ -1,0 +1,7 @@
+[package]
+name = "pareto"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pareto_derive = { path = "../pareto_derive" }

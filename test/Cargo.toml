@@ -1,0 +1,15 @@
+[package]
+name = "pareto_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pareto = { path = "../pareto" }
+
+[dev-dependencies]
+criterion = "0.3"
+rand = "0.8.5"
+
+[[bench]]
+name = "bench_front"
+harness = false
