@@ -3,7 +3,7 @@ use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Index};
 
-#[proc_macro_derive(Dominate)]
+#[proc_macro_derive(Dominate, attributes(pareto_invert, pareto_ignore))]
 pub fn dominate_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -33,11 +33,25 @@ fn generate_comparison(data: &Data) -> TokenStream {
                     //
                     //     `true && self.x <= other.x && self.y <= other.y`
 
-                    let comparison = fields.named.iter().map(|f| {
-                        let name = &f.ident;
-                        quote_spanned! {f.span()=>
-                            self.#name <= other.#name
+                    let comparison = fields.named.iter().filter_map(|f| {
+                        let mut invert = false;
+                        for attr in &f.attrs {
+                            if attr.path().is_ident("pareto_invert") {
+                                invert = !invert;
+                            } else if attr.path().is_ident("pareto_ignore") {
+                                return None;
+                            }
                         }
+                        let name = &f.ident;
+                        Some(if invert {
+                            quote_spanned! {f.span()=>
+                                self.#name >= other.#name
+                            }
+                        } else {
+                            quote_spanned! {f.span()=>
+                                self.#name <= other.#name
+                            }
+                        })
                     });
 
                     quote!(true #(&& #comparison)*)

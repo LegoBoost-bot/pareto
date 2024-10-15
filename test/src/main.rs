@@ -92,4 +92,43 @@ mod test {
         assert!(a.dominates(&b));
         assert!(!b.dominates(&a));
     }
+
+    #[derive(Dominate)]
+    struct C {
+        #[pareto_invert]
+        inverted: usize,
+        #[pareto_invert]
+        #[pareto_invert]
+        normal: usize, // Inverting twice should result in a normal comparison
+    }
+
+    #[test]
+    fn test_invert() {
+        let a = C {
+            inverted: 3,
+            normal: 4,
+        };
+        let b = C {
+            inverted: 5,
+            normal: 1,
+        };
+        assert!(!a.dominates(&b));
+        assert!(b.dominates(&a));
+    }
+
+    #[derive(Dominate)]
+    struct D {
+        a: u32,
+        #[pareto_ignore]
+        #[allow(unused)]
+        b: u32,
+    }
+
+    #[test]
+    fn test_ignore() {
+        let a = D { a: 30, b: u32::MAX };
+        let b = D { a: 31, b: 13 };
+        assert!(a.dominates(&b));
+        assert!(!b.dominates(&a));
+    }
 }
