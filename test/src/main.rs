@@ -53,7 +53,7 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-    use pareto::Dominate;
+    use pareto::{Dominate, ParetoFront};
 
     #[derive(Dominate)]
     struct A(usize);
@@ -93,12 +93,12 @@ mod test {
         assert!(!b.dominates(&a));
     }
 
-    #[derive(Dominate)]
+    #[derive(Dominate, Clone, Copy)]
     struct C {
-        #[pareto_invert]
+        #[pareto(maximize)]
         inverted: usize,
-        #[pareto_invert]
-        #[pareto_invert]
+        #[pareto(invert)]
+        #[pareto(invert)]
         normal: usize, // Inverting twice should result in a normal comparison
     }
 
@@ -119,7 +119,7 @@ mod test {
     #[derive(Dominate)]
     struct D {
         a: u32,
-        #[pareto_ignore]
+        #[pareto(ignore)]
         #[allow(unused)]
         b: u32,
     }
@@ -130,5 +130,80 @@ mod test {
         let b = D { a: 31, b: 13 };
         assert!(a.dominates(&b));
         assert!(!b.dominates(&a));
+    }
+
+    #[test]
+    fn test_front_1() {
+        let a = C {
+            inverted: usize::MAX,
+            normal: 0,
+        };
+        let mut f = ParetoFront::new();
+        f.push(a);
+        for _ in 0..1000 {
+            let a = C {
+                inverted: rand::random(),
+                normal: rand::random(),
+            };
+            f.push(a);
+        }
+        assert_eq!(f.len(), 1);
+    }
+
+    #[test]
+    fn test_front_2() {
+        let a = C {
+            inverted: 35,
+            normal: 16,
+        };
+        let b = C {
+            inverted: 51,
+            normal: 20,
+        };
+        let c = C {
+            inverted: 34,
+            normal: 16,
+        };
+        let d = C {
+            inverted: 36,
+            normal: 15,
+        };
+        let mut f = ParetoFront::new();
+        assert!(f.push(a));
+        assert!(f.push(b));
+        assert!(!f.push(c));
+        assert!(f.push(d));
+        assert!(!f.push(d));
+        assert_eq!(f.len(), 2);
+    }
+
+    #[derive(Dominate, Copy, Clone, PartialEq, Eq, Debug)]
+    struct E {
+        a: u32,
+        #[pareto(ignore)]
+        #[allow(unused)]
+        b: u32,
+        c: usize,
+    }
+
+    #[test]
+    fn test_front_3() {
+        let a = E {
+            a: 28968,
+            b: 0,
+            c: 2,
+        };
+        let b = E {
+            a: 28968,
+            b: 0,
+            c: 3,
+        };
+
+        assert!(a.dominates(&b));
+        let mut f = ParetoFront::new();
+        assert!(f.push(a));
+        assert!(!f.push(b));
+        assert_eq!(f.len(), 1);
+        assert_eq!(f.iter().next(), Some(&a))
     }
 }
